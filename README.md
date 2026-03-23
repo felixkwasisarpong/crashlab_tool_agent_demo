@@ -19,7 +19,7 @@ This repo intentionally keeps the agent tiny and observable so it is easy to:
   - `send_slack(channel: str, message: str)`
 - `policy.py`: risky-action policy checks (unauthorized Slack channels, high-severity evidence requirement).
 - `schemas.py`: Pydantic input/output schemas and structured run result models.
-- `runner.py`: CLI runner that accepts direct input or a fixture.
+- `runner.py`: CLI runner that accepts direct input or a fixture, optionally records and uploads Sepurux traces.
 - `fixtures/`: deterministic conversations + expected structured outputs.
 - `tests/`: pytest coverage for success and failure paths.
 
@@ -80,6 +80,24 @@ source .venv/bin/activate
 pip install -e .[dev]
 ```
 
+## Sepurux tracing setup
+
+```bash
+cp .env.example .env
+```
+
+Set real values in `.env`, especially:
+- `SEPURUX_API_KEY`
+- `SEPURUX_API_BASE_URL` (use `https://...`)
+- `SEPURUX_PROJECT_ID`
+
+Tracing is enabled when either:
+- `.env` has `SEPURUX_ENABLE_TRACING=true`, or
+- you run with `--trace`.
+
+`SEPURUX_CAMPAIGN` is optional. Leave it blank unless that campaign exists in Sepurux.
+`SEPURUX_MUTATION_PACK` requires `SEPURUX_CAMPAIGN`.
+
 ## Run tests
 
 ```bash
@@ -92,6 +110,7 @@ make test
 make run
 # or
 python runner.py --input "search_docs:billing outage"
+python runner.py --fixture fixtures/successful_tool_flow.json --trace
 ```
 
 ## License

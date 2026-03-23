@@ -47,7 +47,11 @@ jobs:
               project_id=(os.getenv("SEPURUX_PROJECT_ID") or None),
           )
 
-          run_id = client.run_campaign(campaign_id)  # pass ID, not name
+          run_id = client.start_run(
+                trace_id=os.environ["SEPURUX_TRACE_ID"],
+                campaign_id=os.environ["SEPURUX_CAMPAIGN_ID"],
+            )
+
           print(f"Started Sepurux run: {run_id}")
 
           print(f"Started Sepurux run: {run_id}")
