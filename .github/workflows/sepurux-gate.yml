@@ -90,9 +90,11 @@ jobs:
           if score < min_reliability:
               sys.exit(1)
           PY
+
         env:
-          SEPURUX_API_BASE_URL: http://app.sepurux.com/api/backend
+          SEPURUX_API_BASE_URL: https://app.sepurux.com/api/backend
           SEPURUX_API_KEY: ${{ secrets.SEPURUX_API_KEY }}
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
