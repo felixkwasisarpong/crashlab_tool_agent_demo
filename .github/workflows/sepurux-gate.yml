@@ -27,79 +27,101 @@ jobs:
 
       - name: Run reliability gate
         run: |
-          python - <<'PY'
-          import os
-          import sys
-          import time
-          from sepurux import SepuruxClient
+              python - <<'PY'
+              import os
+              import sys
+              import time
+              import httpx
+              from sepurux import SepuruxClient
 
-          campaign_id = (os.getenv("SEPURUX_CAMPAIGN_ID") or "").strip()
-          if not campaign_id:
-              print("SEPURUX_CAMPAIGN_ID is missing/empty")
-              sys.exit(1)
+              def required_env(name: str) -> str:
+                  value = (os.getenv(name) or "").strip()
+                  if not value:
+                      print(f"{name} is missing/empty")
+                      sys.exit(1)
+                  return value
 
-          min_reliability = 80.0
-          timeout_seconds = 600
+              base_url = required_env("SEPURUX_API_BASE_URL").rstrip("/")
+              api_key = required_env("SEPURUX_API_KEY")
+              campaign_id = required_env("SEPURUX_CAMPAIGN_ID")
+              trace_id = required_env("SEPURUX_TRACE_ID")
+              project_id = (os.getenv("SEPURUX_PROJECT_ID") or "").strip() or None
 
-          client = SepuruxClient(
-              base_url=os.environ["SEPURUX_API_BASE_URL"],
-              api_key=os.environ["SEPURUX_API_KEY"],
-              project_id=(os.getenv("SEPURUX_PROJECT_ID") or None),
-          )
+              min_reliability = float((os.getenv("SEPURUX_MIN_RELIABILITY") or "80").strip())
+              timeout_seconds = int((os.getenv("SEPURUX_TIMEOUT_SECONDS") or "600").strip())
 
-          run_id = client.start_run(
-                trace_id=os.environ["SEPURUX_TRACE_ID"],
-                campaign_id=os.environ["SEPURUX_CAMPAIGN_ID"],
-            )
+              headers = {"X-API-Key": api_key}
+              if project_id:
+                  headers["X-Project-Id"] = project_id
 
-          print(f"Started Sepurux run: {run_id}")
+              # Preflight checks: fail early if trace/campaign is wrong for this key/project
+              for path in (f"/v1/traces/{trace_id}", f"/v1/campaigns/{campaign_id}"):
+                  url = f"{base_url}{path}"
+                  resp = httpx.get(url, headers=headers, timeout=30)
+                  if resp.status_code >= 400:
+                      print(f"Preflight failed: GET {url} -> {resp.status_code}")
+                      print(resp.text)
+                      sys.exit(1)
 
-          print(f"Started Sepurux run: {run_id}")
+              client = SepuruxClient(
+                  base_url=base_url,
+                  api_key=api_key,
+                  project_id=project_id,
+              )
 
-          terminal_success = {"completed", "success", "succeeded", "done"}
-          terminal_failure = {"failed", "error", "cancelled"}
-          deadline = time.time() + timeout_seconds
-          latest = {"status": "unknown", "summary": {}}
+              try:
+                  run_id = client.start_run(trace_id=trace_id, campaign_id=campaign_id)
+              except httpx.HTTPStatusError as exc:
+                  print(f"start_run failed: {exc.response.status_code} {exc.request.url}")
+                  print(exc.response.text)
+                  sys.exit(1)
 
-          while time.time() < deadline:
-              latest = client.get_run(run_id)
+              print(f"Started Sepurux run: {run_id}")
+
+              terminal_success = {"completed", "success", "succeeded", "done"}
+              terminal_failure = {"failed", "error", "cancelled"}
+              deadline = time.time() + timeout_seconds
+              latest = {"status": "unknown", "summary": {}}
+
+              while time.time() < deadline:
+                  latest = client.get_run(run_id)
+                  status = str(latest.get("status", "")).lower()
+                  print(f"Run status: {status}")
+                  if status in terminal_success | terminal_failure:
+                      break
+                  time.sleep(5)
+              else:
+                  print(f"Run timed out after {timeout_seconds}s")
+                  sys.exit(1)
+
               status = str(latest.get("status", "")).lower()
-              print(f"Run status: {status}")
-              if status in terminal_success | terminal_failure:
-                  break
-              time.sleep(5)
-          else:
-              print(f"Run timed out after {timeout_seconds}s")
-              sys.exit(1)
+              if status in terminal_failure:
+                  print(f"Run ended in failure state: {status}")
+                  sys.exit(1)
+              if status not in terminal_success:
+                  print(f"Run ended in unknown non-success state: {status}")
+                  sys.exit(1)
 
-          status = str(latest.get("status", "")).lower()
-          if status in terminal_failure:
-              print(f"Run ended in failure state: {status}")
-              sys.exit(1)
-          if status not in terminal_success:
-              print(f"Run ended in unknown non-success state: {status}")
-              sys.exit(1)
+              summary = latest.get("summary") or {}
+              score = None
+              for key in ("reliability", "reliability_score", "score", "pass_rate"):
+                  value = summary.get(key)
+                  if isinstance(value, (int, float)):
+                      score = float(value)
+                      break
 
-          summary = latest.get("summary") or {}
-          score = None
-          for key in ("reliability", "reliability_score", "score", "pass_rate"):
-              value = summary.get(key)
-              if isinstance(value, (int, float)):
-                  score = float(value)
-                  break
+              if score is None:
+                  print("Could not find a numeric reliability score in run summary.")
+                  print(f"Summary payload: {summary}")
+                  sys.exit(1)
 
-          if score is None:
-              print("Could not find a numeric reliability score in run summary.")
-              print(f"Summary payload: {summary}")
-              sys.exit(1)
+              if score <= 1:
+                  score *= 100.0
 
-          if score <= 1:
-              score *= 100.0
-
-          print(f"Reliability score: {score:.2f} (threshold: {min_reliability:.2f})")
-          if score < min_reliability:
-              sys.exit(1)
-          PY
+              print(f"Reliability score: {score:.2f} (threshold: {min_reliability:.2f})")
+              if score < min_reliability:
+                  sys.exit(1)
+              PY
 
         env:
           SEPURUX_API_BASE_URL: https://app.sepurux.dev/api/backend
