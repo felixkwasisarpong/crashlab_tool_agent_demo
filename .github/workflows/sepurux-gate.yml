@@ -31,19 +31,25 @@ jobs:
           import os
           import sys
           import time
-
           from sepurux import SepuruxClient
 
-          campaign_name = "core-reliability"
+          campaign_id = (os.getenv("SEPURUX_CAMPAIGN_ID") or "").strip()
+          if not campaign_id:
+              print("SEPURUX_CAMPAIGN_ID is missing/empty")
+              sys.exit(1)
+
           min_reliability = 80.0
           timeout_seconds = 600
 
           client = SepuruxClient(
               base_url=os.environ["SEPURUX_API_BASE_URL"],
               api_key=os.environ["SEPURUX_API_KEY"],
+              project_id=(os.getenv("SEPURUX_PROJECT_ID") or None),
           )
 
-          run_id = client.run_campaign(campaign_name)
+          run_id = client.run_campaign(campaign_id)  # pass ID, not name
+          print(f"Started Sepurux run: {run_id}")
+
           print(f"Started Sepurux run: {run_id}")
 
           terminal_success = {"completed", "success", "succeeded", "done"}
