@@ -1,0 +1,32 @@
+{
+  "name": "invalid_tool_arguments",
+  "user_input": "create_ticket:Bad severity example|critical",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "create_ticket",
+        "args": {
+          "title": "Bad severity example",
+          "severity": "critical"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "create_ticket",
+        "ok": false,
+        "output": null,
+        "error_code": "invalid_tool_arguments",
+        "error_message": "severity:literal_error"
+      }
+    ],
+    "errors": [
+      {
+        "code": "invalid_tool_arguments",
+        "message": "severity:literal_error",
+        "tool_name": "create_ticket"
+      }
+    ]
+  }
+}

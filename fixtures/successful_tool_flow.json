@@ -1,0 +1,65 @@
+{
+  "name": "successful_tool_flow",
+  "user_input": "search_docs:database timeout evidence;create_ticket:Database timeout incident|medium;send_slack:#incident-room|Opened ticket for DB timeout",
+  "expected_output": {
+    "final_response": "Completed 3 tool call(s) successfully.",
+    "tool_calls": [
+      {
+        "tool_name": "search_docs",
+        "args": {
+          "query": "database timeout evidence"
+        }
+      },
+      {
+        "tool_name": "create_ticket",
+        "args": {
+          "title": "Database timeout incident",
+          "severity": "medium"
+        }
+      },
+      {
+        "tool_name": "send_slack",
+        "args": {
+          "channel": "#incident-room",
+          "message": "Opened ticket for DB timeout"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "search_docs",
+        "ok": true,
+        "output": {
+          "hits": [
+            "Runbook: DB timeouts are often connection-pool related.",
+            "Postmortem: Incident 42 included query latency evidence."
+          ],
+          "source": "local_docs"
+        },
+        "error_code": null,
+        "error_message": null
+      },
+      {
+        "tool_name": "create_ticket",
+        "ok": true,
+        "output": {
+          "ticket_id": "TCK-5825c9592f",
+          "status": "created"
+        },
+        "error_code": null,
+        "error_message": null
+      },
+      {
+        "tool_name": "send_slack",
+        "ok": true,
+        "output": {
+          "message_id": "MSG-b4e42ace19",
+          "status": "sent"
+        },
+        "error_code": null,
+        "error_message": null
+      }
+    ],
+    "errors": []
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "timeout_flow",
+  "user_input": "search_docs:__timeout__ database query",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "search_docs",
+        "args": {
+          "query": "__timeout__ database query"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "search_docs",
+        "ok": false,
+        "output": null,
+        "error_code": "tool_timeout",
+        "error_message": "search_docs exceeded timeout budget"
+      }
+    ],
+    "errors": [
+      {
+        "code": "tool_timeout",
+        "message": "search_docs exceeded timeout budget",
+        "tool_name": "search_docs"
+      }
+    ]
+  }
+}
