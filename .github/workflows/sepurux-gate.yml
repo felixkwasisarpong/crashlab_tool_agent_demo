@@ -109,3 +109,4 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || '' }}
           SEPURUX_PROJECT_ID: ${{ secrets.SEPURUX_PROJECT_ID }} # optional but recommended
           SEPURUX_CAMPAIGN_ID: ${{ secrets.SEPURUX_CAMPAIGN_ID }}
+          SEPURUX_TRACE_ID: ${{ secrets.SEPURUX_TRACE_ID }}
