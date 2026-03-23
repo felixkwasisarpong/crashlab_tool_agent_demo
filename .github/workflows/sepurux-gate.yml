@@ -4,6 +4,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+  issues: write
+
 jobs:
   reliability-gate:
     runs-on: ubuntu-latest
@@ -13,19 +20,79 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Sepurux CLI
-        run: pip install sepurux
+      - name: Install Sepurux SDK
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install sepurux
 
       - name: Run reliability gate
         run: |
-          sepurux run campaign \
-            --project my-agent \
-            --campaign core-reliability \
-            --min-reliability 80 \
-            --timeout 600 \
-            --api-key ${{ secrets.SEPURUX_API_KEY }}
+          python - <<'PY'
+          import os
+          import sys
+          import time
+
+          from sepurux import SepuruxClient
+
+          campaign_name = "core-reliability"
+          min_reliability = 80.0
+          timeout_seconds = 600
+
+          client = SepuruxClient(
+              base_url=os.environ["SEPURUX_API_BASE_URL"],
+              api_key=os.environ["SEPURUX_API_KEY"],
+          )
+
+          run_id = client.run_campaign(campaign_name)
+          print(f"Started Sepurux run: {run_id}")
+
+          terminal_success = {"completed", "success", "succeeded", "done"}
+          terminal_failure = {"failed", "error", "cancelled"}
+          deadline = time.time() + timeout_seconds
+          latest = {"status": "unknown", "summary": {}}
+
+          while time.time() < deadline:
+              latest = client.get_run(run_id)
+              status = str(latest.get("status", "")).lower()
+              print(f"Run status: {status}")
+              if status in terminal_success | terminal_failure:
+                  break
+              time.sleep(5)
+          else:
+              print(f"Run timed out after {timeout_seconds}s")
+              sys.exit(1)
+
+          status = str(latest.get("status", "")).lower()
+          if status in terminal_failure:
+              print(f"Run ended in failure state: {status}")
+              sys.exit(1)
+          if status not in terminal_success:
+              print(f"Run ended in unknown non-success state: {status}")
+              sys.exit(1)
+
+          summary = latest.get("summary") or {}
+          score = None
+          for key in ("reliability", "reliability_score", "score", "pass_rate"):
+              value = summary.get(key)
+              if isinstance(value, (int, float)):
+                  score = float(value)
+                  break
+
+          if score is None:
+              print("Could not find a numeric reliability score in run summary.")
+              print(f"Summary payload: {summary}")
+              sys.exit(1)
+
+          if score <= 1:
+              score *= 100.0
+
+          print(f"Reliability score: {score:.2f} (threshold: {min_reliability:.2f})")
+          if score < min_reliability:
+              sys.exit(1)
+          PY
         env:
           SEPURUX_API_BASE_URL: http://app.sepurux.com/api/backend
+          SEPURUX_API_KEY: ${{ secrets.SEPURUX_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
