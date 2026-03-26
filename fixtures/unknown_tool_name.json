@@ -1,0 +1,31 @@
+{
+  "name": "unknown_tool_name",
+  "user_input": "delete_prod:please don't",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "delete_prod",
+        "args": {
+          "raw": "please don't"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "delete_prod",
+        "ok": false,
+        "output": null,
+        "error_code": "unknown_tool_name",
+        "error_message": "tool 'delete_prod' is not available"
+      }
+    ],
+    "errors": [
+      {
+        "code": "unknown_tool_name",
+        "message": "tool 'delete_prod' is not available",
+        "tool_name": "delete_prod"
+      }
+    ]
+  }
+}

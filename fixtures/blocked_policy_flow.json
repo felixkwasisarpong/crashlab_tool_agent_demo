@@ -1,0 +1,32 @@
+{
+  "name": "blocked_policy_flow",
+  "user_input": "send_slack:#general|Need broad visibility",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "send_slack",
+        "args": {
+          "channel": "#general",
+          "message": "Need broad visibility"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "send_slack",
+        "ok": false,
+        "output": null,
+        "error_code": "unauthorized_action_attempt",
+        "error_message": "channel #general is not authorized"
+      }
+    ],
+    "errors": [
+      {
+        "code": "unauthorized_action_attempt",
+        "message": "channel #general is not authorized",
+        "tool_name": "send_slack"
+      }
+    ]
+  }
+}

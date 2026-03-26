@@ -1,0 +1,31 @@
+{
+  "name": "malformed_tool_response",
+  "user_input": "search_docs:__malformed__ docs query",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "search_docs",
+        "args": {
+          "query": "__malformed__ docs query"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "search_docs",
+        "ok": false,
+        "output": null,
+        "error_code": "malformed_tool_response",
+        "error_message": "hits:missing; source:missing; bad:extra_forbidden"
+      }
+    ],
+    "errors": [
+      {
+        "code": "malformed_tool_response",
+        "message": "hits:missing; source:missing; bad:extra_forbidden",
+        "tool_name": "search_docs"
+      }
+    ]
+  }
+}

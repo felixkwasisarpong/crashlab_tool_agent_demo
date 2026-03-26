@@ -1,0 +1,32 @@
+{
+  "name": "high_severity_without_evidence",
+  "user_input": "create_ticket:Critical DB outage|high",
+  "expected_output": {
+    "final_response": "Completed 1 tool call(s) with 1 error(s).",
+    "tool_calls": [
+      {
+        "tool_name": "create_ticket",
+        "args": {
+          "title": "Critical DB outage",
+          "severity": "high"
+        }
+      }
+    ],
+    "tool_results": [
+      {
+        "tool_name": "create_ticket",
+        "ok": false,
+        "output": null,
+        "error_code": "unauthorized_action_attempt",
+        "error_message": "high-severity tickets require prior evidence from search_docs"
+      }
+    ],
+    "errors": [
+      {
+        "code": "unauthorized_action_attempt",
+        "message": "high-severity tickets require prior evidence from search_docs",
+        "tool_name": "create_ticket"
+      }
+    ]
+  }
+}

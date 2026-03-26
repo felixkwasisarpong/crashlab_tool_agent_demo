@@ -1,0 +1,10 @@
+{
+  "name": "no_tool_needed",
+  "user_input": "Can you summarize this without calling tools?",
+  "expected_output": {
+    "final_response": "No tool needed. Responded without tool calls.",
+    "tool_calls": [],
+    "tool_results": [],
+    "errors": []
+  }
+}
