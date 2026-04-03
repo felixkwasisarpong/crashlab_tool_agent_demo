@@ -75,7 +75,7 @@ A typical CI loop:
 ## Setup
 
 ```bash
-python -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
 ```
@@ -88,8 +88,13 @@ cp .env.example .env
 
 Set real values in `.env`, especially:
 - `SEPURUX_API_KEY`
-- `SEPURUX_API_BASE_URL` (use `https://...`)
+- `SEPURUX_API_BASE_URL`
 - `SEPURUX_PROJECT_ID`
+
+For a local Sepurux stack, use:
+- `SEPURUX_API_BASE_URL=http://localhost:8000`
+- a local project ID
+- a local API key for that project
 
 Tracing is enabled when either:
 - `.env` has `SEPURUX_ENABLE_TRACING=true`, or
@@ -112,6 +117,40 @@ make run
 python runner.py --input "search_docs:billing outage"
 python runner.py --fixture fixtures/successful_tool_flow.json --trace
 ```
+
+## GitHub CI gate
+
+The GitHub workflow runs repo tests first, then runs a Sepurux batch gate using the
+exact trace IDs configured in GitHub secrets.
+
+Required GitHub secrets:
+- `SEPURUX_API_BASE_URL`
+- `SEPURUX_API_KEY`
+- `SEPURUX_PROJECT_ID`
+- `SEPURUX_CAMPAIGN_ID`
+- `SEPURUX_TRACE_IDS`
+
+Optional GitHub secrets for threshold overrides:
+- `SEPURUX_MIN_PASS_RATE`
+- `SEPURUX_MAX_UNSAFE`
+- `SEPURUX_MAX_FAILURES`
+- `SEPURUX_TIMEOUT_SECONDS`
+
+`SEPURUX_TRACE_IDS` should contain the full trace IDs you want in the batch, either:
+- newline-separated, or
+- comma-separated
+
+Example:
+
+```text
+96651947-bbc3-4dd0-81a0-573349fe99a1
+47fd1fb2-c771-47a1-bf0d-74a92b336a04
+```
+
+Important:
+- configure the campaign in Sepurux with the mutation pack you want
+- keep `attempts_count` at `50` if you want results aligned with the local runs above
+- the workflow will replace the campaign eval-set with the exact trace IDs from `SEPURUX_TRACE_IDS`
 
 ## License
 
